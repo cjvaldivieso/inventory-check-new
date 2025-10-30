@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Warehouse Inventory Check</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <img src="shappi-logo.png" alt="Shappi Logo" style="max-width:150px;margin-top:20px;" />
+    <h1>📦 Warehouse Inventory Check</h1>
+  </header>
+
+  <section id="uploadSection">
+    <h3>Upload Inventory CSV File</h3>
+    <input type="file" id="csvUpload" name="file" accept=".csv" style="padding:10px;margin:10px;" />
+  </section>
+
+  <section id="controls">
+    <button id="scanBinBtn">Scan BIN QR</button>
+    <button id="scanItemBtn">Scan Item QR</button>
+  </section>
+
+  <div id="currentBinWrapper">Current Bin: <span id="currentBin">None</span></div>
+
+  <table id="logTable">
+    <thead>
+      <tr><th>Item ID</th><th>Expected Bin</th><th>Scanned Bin</th><th>Status</th></tr>
+    </thead>
+    <tbody id="logTbody"></tbody>
+  </table>
+
+  <div class="button-group">
+    <button id="finalizeBtn">Finalize Audit</button>
+    <button id="exportCsvBtn">Export CSV</button>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
+
