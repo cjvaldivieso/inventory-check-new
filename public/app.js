@@ -112,6 +112,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document
     .getElementById("scanBinQrBtn")
     ?.addEventListener("click", () => createScanner("BIN"));
+console.log("✅ Scan BIN button clicked");
   document
     .getElementById("scanItemQrBtn")
     ?.addEventListener("click", () => createScanner("Item"));
