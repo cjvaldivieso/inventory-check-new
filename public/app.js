@@ -55,73 +55,72 @@ document.addEventListener("DOMContentLoaded", () => {
   // =========================
   // 📸 QR SCANNER (BIN + ITEM)
   // =========================
-const createScanner = async (label) => {
-  try {
-    // ✅ Updated camera request for iOS (requires user gesture)
-    const constraints = { video: { facingMode: { ideal: "environment" } } };
-    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+const createScanner = (label) => {
+  // ✅ Must run directly on user gesture
+  const button = document.createElement("button");
+  button.style.display = "none";
+  document.body.appendChild(button);
 
-    const video = document.createElement("video");
-    video.setAttribute("playsinline", true); // prevents fullscreen on iPhones
-    video.srcObject = stream;
-    await video.play();
+  button.addEventListener("click", async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" } },
+      });
 
-    const overlay = document.createElement("div");
-    overlay.style.position = "fixed";
-    overlay.style.top = "0";
-    overlay.style.left = "0";
-    overlay.style.width = "100%";
-    overlay.style.height = "100%";
-    overlay.style.backgroundColor = "rgba(0,0,0,0.85)";
-    overlay.style.display = "flex";
-    overlay.style.flexDirection = "column";
-    overlay.style.alignItems = "center";
-    overlay.style.justifyContent = "center";
-    overlay.style.zIndex = "9999";
+      const video = document.createElement("video");
+      video.setAttribute("playsinline", true);
+      video.srcObject = stream;
+      await video.play();
 
-    const text = document.createElement("p");
-    text.innerText = `Scanning ${label} QR...`;
-    text.style.color = "#fff";
-    text.style.marginBottom = "12px";
-    text.style.fontSize = "18px";
-    overlay.appendChild(text);
-    overlay.appendChild(video);
-    document.body.appendChild(overlay);
+      const overlay = document.createElement("div");
+      overlay.style.position = "fixed";
+      overlay.style.top = "0";
+      overlay.style.left = "0";
+      overlay.style.width = "100%";
+      overlay.style.height = "100%";
+      overlay.style.backgroundColor = "rgba(0,0,0,0.85)";
+      overlay.style.display = "flex";
+      overlay.style.flexDirection = "column";
+      overlay.style.alignItems = "center";
+      overlay.style.justifyContent = "center";
+      overlay.style.zIndex = "9999";
 
-    // ✅ Dynamically load the QR library
-    const { default: QrScanner } = await import(
-      "https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.min.js"
-    );
+      const text = document.createElement("p");
+      text.innerText = `Scanning ${label} QR...`;
+      text.style.color = "#fff";
+      text.style.marginBottom = "12px";
+      text.style.fontSize = "18px";
+      overlay.appendChild(text);
+      overlay.appendChild(video);
+      document.body.appendChild(overlay);
 
-    const qrScanner = new QrScanner(video, (result) => {
-      alert(`${label} Scanned: ${result.data}`);
-      if (label === "BIN") {
-        currentBin = result.data;
-        if (currentBinDisplay) {
+      const { default: QrScanner } = await import(
+        "https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.min.js"
+      );
+
+      const qrScanner = new QrScanner(video, (result) => {
+        alert(`${label} Scanned: ${result.data}`);
+        if (label === "BIN") {
+          currentBin = result.data;
           currentBinDisplay.textContent = `Current Bin: ${currentBin}`;
         }
-      }
-      qrScanner.stop();
-      stream.getTracks().forEach((t) => t.stop());
-      document.body.removeChild(overlay);
-    });
+        qrScanner.stop();
+        stream.getTracks().forEach((t) => t.stop());
+        document.body.removeChild(overlay);
+      });
+      qrScanner.start();
+    } catch (err) {
+      console.error("Camera access failed:", err);
+      alert(
+        "⚠️ Camera access blocked. Go to Settings → Safari or Chrome → enable Camera access."
+      );
+    }
+  });
 
-    qrScanner.start();
-  } catch (err) {
-    console.error("Camera access failed:", err);
-    alert(
-      "⚠️ Unable to access camera. Go to iPhone Settings → Safari or Chrome → enable Camera access for this site."
-    );
-  }
+  button.click();
+  document.body.removeChild(button);
 };
 
- document
-    .getElementById("scanBinQrBtn")
-    ?.addEventListener("click", () => createScanner("BIN"));
-console.log("✅ Scan BIN button clicked");
-  document
-    .getElementById("scanItemQrBtn")
-    ?.addEventListener("click", () => createScanner("Item"));
 
   // =========================
   // 📤 EXPORT CSV
