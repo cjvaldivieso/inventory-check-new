@@ -54,3 +54,33 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
+// --- PWA install banner ---
+let deferredPrompt;
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+
+  const installBtn = document.createElement("button");
+  installBtn.textContent = "📲 Install Shappi Inventory";
+  installBtn.style.position = "fixed";
+  installBtn.style.bottom = "20px";
+  installBtn.style.right = "20px";
+  installBtn.style.padding = "12px 18px";
+  installBtn.style.backgroundColor = "#6a39ff";
+  installBtn.style.color = "white";
+  installBtn.style.border = "none";
+  installBtn.style.borderRadius = "8px";
+  installBtn.style.cursor = "pointer";
+  installBtn.style.zIndex = "1000";
+
+  installBtn.onclick = async () => {
+    installBtn.style.display = "none";
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log(`User response to install: ${outcome}`);
+    deferredPrompt = null;
+  };
+
+  document.body.appendChild(installBtn);
+});
+

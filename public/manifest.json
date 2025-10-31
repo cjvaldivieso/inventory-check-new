@@ -1,0 +1,27 @@
+{
+  "name": "Shappi Inventory",
+  "short_name": "Shappi",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#5A2D82",
+  "theme_color": "#5A2D82",
+  "description": "Mobile inventory management for Shappi.",
+  "icons": [
+    {
+      "src": "/icons/shappi-logo-96.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/shappi-logo-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/shappi-logo-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
+
