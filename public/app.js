@@ -55,70 +55,90 @@ document.addEventListener("DOMContentLoaded", () => {
   // =========================
   // 📸 QR SCANNER (BIN + ITEM)
   // =========================
-const createScanner = (label) => {
-  // ✅ Must run directly on user gesture
-  const button = document.createElement("button");
-  button.style.display = "none";
-  document.body.appendChild(button);
+const createScanner = async (label) => {
+  try {
+    // Try to open the camera with getUserMedia
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: "environment" } },
+    });
 
-  button.addEventListener("click", async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" } },
-      });
+    const video = document.createElement("video");
+    video.setAttribute("playsinline", true);
+    video.srcObject = stream;
+    await video.play();
 
-      const video = document.createElement("video");
-      video.setAttribute("playsinline", true);
-      video.srcObject = stream;
-      await video.play();
+    const overlay = document.createElement("div");
+    overlay.style.position = "fixed";
+    overlay.style.top = "0";
+    overlay.style.left = "0";
+    overlay.style.width = "100%";
+    overlay.style.height = "100%";
+    overlay.style.backgroundColor = "rgba(0,0,0,0.85)";
+    overlay.style.display = "flex";
+    overlay.style.flexDirection = "column";
+    overlay.style.alignItems = "center";
+    overlay.style.justifyContent = "center";
+    overlay.style.zIndex = "9999";
 
-      const overlay = document.createElement("div");
-      overlay.style.position = "fixed";
-      overlay.style.top = "0";
-      overlay.style.left = "0";
-      overlay.style.width = "100%";
-      overlay.style.height = "100%";
-      overlay.style.backgroundColor = "rgba(0,0,0,0.85)";
-      overlay.style.display = "flex";
-      overlay.style.flexDirection = "column";
-      overlay.style.alignItems = "center";
-      overlay.style.justifyContent = "center";
-      overlay.style.zIndex = "9999";
+    const text = document.createElement("p");
+    text.innerText = `Scanning ${label} QR...`;
+    text.style.color = "#fff";
+    text.style.marginBottom = "12px";
+    text.style.fontSize = "18px";
+    overlay.appendChild(text);
+    overlay.appendChild(video);
+    document.body.appendChild(overlay);
 
-      const text = document.createElement("p");
-      text.innerText = `Scanning ${label} QR...`;
-      text.style.color = "#fff";
-      text.style.marginBottom = "12px";
-      text.style.fontSize = "18px";
-      overlay.appendChild(text);
-      overlay.appendChild(video);
-      document.body.appendChild(overlay);
+    const { default: QrScanner } = await import(
+      "https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.min.js"
+    );
+
+    const qrScanner = new QrScanner(video, (result) => {
+      alert(`${label} Scanned: ${result.data}`);
+      if (label === "BIN") {
+        currentBin = result.data;
+        currentBinDisplay.textContent = `Current Bin: ${currentBin}`;
+      }
+      qrScanner.stop();
+      stream.getTracks().forEach((t) => t.stop());
+      document.body.removeChild(overlay);
+    });
+
+    qrScanner.start();
+  } catch (err) {
+    console.warn("Camera blocked, using fallback:", err);
+
+    // Fallback: use file input to scan an uploaded photo
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.capture = "environment"; // Opens camera directly
+    input.style.display = "none";
+
+    input.addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
 
       const { default: QrScanner } = await import(
         "https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.min.js"
       );
 
-      const qrScanner = new QrScanner(video, (result) => {
-        alert(`${label} Scanned: ${result.data}`);
+      const result = await QrScanner.scanImage(file);
+      if (result) {
+        alert(`${label} Scanned: ${result}`);
         if (label === "BIN") {
-          currentBin = result.data;
+          currentBin = result;
           currentBinDisplay.textContent = `Current Bin: ${currentBin}`;
         }
-        qrScanner.stop();
-        stream.getTracks().forEach((t) => t.stop());
-        document.body.removeChild(overlay);
-      });
-      qrScanner.start();
-    } catch (err) {
-      console.error("Camera access failed:", err);
-      alert(
-        "⚠️ Camera access blocked. Go to Settings → Safari or Chrome → enable Camera access."
-      );
-    }
-  });
+      } else {
+        alert("❌ Unable to read QR code from image.");
+      }
+    });
 
-  button.click();
-  document.body.removeChild(button);
+    document.body.appendChild(input);
+    input.click();
+    document.body.removeChild(input);
+  }
 };
 
 
