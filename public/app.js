@@ -55,13 +55,49 @@ document.addEventListener("DOMContentLoaded", () => {
   // =========================
   // 📸 QR SCANNER (BIN + ITEM)
   // =========================
+
 const createScanner = async (label) => {
-  try {
-    // Try to open the camera with getUserMedia
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: "environment" } },
+  const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+  // --- iOS FALLBACK ---
+  if (isiOS) {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.capture = "environment";
+    input.style.display = "none";
+
+    input.addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const { default: QrScanner } = await import(
+        "https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.min.js"
+      );
+      const result = await QrScanner.scanImage(file);
+
+      if (result) {
+        alert(`${label} Scanned: ${result}`);
+        if (label === "BIN") {
+          currentBin = result;
+          currentBinDisplay.textContent = `Current Bin: ${currentBin}`;
+        }
+      } else {
+        alert("❌ Could not read QR. Try again.");
+      }
     });
 
+    document.body.appendChild(input);
+    input.click();
+    document.body.removeChild(input);
+    return;
+  }
+
+  // --- DESKTOP / ANDROID LIVE CAMERA ---
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment" },
+    });
     const video = document.createElement("video");
     video.setAttribute("playsinline", true);
     video.srcObject = stream;
@@ -69,25 +105,25 @@ const createScanner = async (label) => {
 
     const overlay = document.createElement("div");
     overlay.style.position = "fixed";
-    overlay.style.top = "0";
-    overlay.style.left = "0";
+    overlay.style.top = 0;
+    overlay.style.left = 0;
     overlay.style.width = "100%";
     overlay.style.height = "100%";
-    overlay.style.backgroundColor = "rgba(0,0,0,0.85)";
+    overlay.style.background = "rgba(0,0,0,0.9)";
     overlay.style.display = "flex";
     overlay.style.flexDirection = "column";
     overlay.style.alignItems = "center";
     overlay.style.justifyContent = "center";
-    overlay.style.zIndex = "9999";
-
-    const text = document.createElement("p");
-    text.innerText = `Scanning ${label} QR...`;
-    text.style.color = "#fff";
-    text.style.marginBottom = "12px";
-    text.style.fontSize = "18px";
-    overlay.appendChild(text);
-    overlay.appendChild(video);
+    overlay.style.zIndex = 9999;
     document.body.appendChild(overlay);
+
+    const msg = document.createElement("p");
+    msg.innerText = `Scanning ${label} QR...`;
+    msg.style.color = "#fff";
+    msg.style.fontSize = "18px";
+    msg.style.marginBottom = "12px";
+    overlay.appendChild(msg);
+    overlay.appendChild(video);
 
     const { default: QrScanner } = await import(
       "https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.min.js"
@@ -106,40 +142,12 @@ const createScanner = async (label) => {
 
     qrScanner.start();
   } catch (err) {
-    console.warn("Camera blocked, using fallback:", err);
-
-    // Fallback: use file input to scan an uploaded photo
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/*";
-    input.capture = "environment"; // Opens camera directly
-    input.style.display = "none";
-
-    input.addEventListener("change", async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const { default: QrScanner } = await import(
-        "https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.min.js"
-      );
-
-      const result = await QrScanner.scanImage(file);
-      if (result) {
-        alert(`${label} Scanned: ${result}`);
-        if (label === "BIN") {
-          currentBin = result;
-          currentBinDisplay.textContent = `Current Bin: ${currentBin}`;
-        }
-      } else {
-        alert("❌ Unable to read QR code from image.");
-      }
-    });
-
-    document.body.appendChild(input);
-    input.click();
-    document.body.removeChild(input);
+    console.error("Camera access failed:", err);
+    alert("⚠️ Camera blocked. Enable access in browser settings.");
   }
 };
+
+
 
   // =========================
   // 📤 EXPORT CSV
